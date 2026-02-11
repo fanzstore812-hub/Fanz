@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Perkalian</title>
+
+<style>
+body{
+    font-family:Arial;
+    text-align:center;
+    background:#121212;
+    color:white;
+    padding:20px;
+    transition:0.3s;
+}
+
+.container{
+    background:#1e1e1e;
+    padding:20px;
+    border-radius:15px;
+    max-width:400px;
+    margin:auto;
+    box-shadow:0 5px 20px rgba(0,0,0,0.5);
+}
+
+.soal{
+    font-size:26px;
+    margin:15px 0;
+}
+
+button{
+    display:block;
+    width:100%;
+    padding:14px;
+    margin:10px 0;
+    border:none;
+    border-radius:10px;
+    background:#2c2c2c;
+    color:white;
+    font-size:18px;
+    cursor:pointer;
+    transition:0.2s ease;
+}
+
+button:hover{
+    background:#3a3a3a;
+}
+
+button:active{
+    transform:scale(0.95);
+}
+
+.benar{
+    background:#2ecc71 !important;
+    box-shadow:0 0 20px #2ecc71;
+    animation:pop 0.3s ease;
+}
+
+.salah{
+    background:#e74c3c !important;
+    box-shadow:0 0 20px #e74c3c;
+    animation:getar 0.3s;
+}
+
+.flash-hijau{
+    animation:flashHijau 0.4s;
+}
+
+.flash-merah{
+    animation:flashMerah 0.4s;
+}
+
+@keyframes pop{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.1);}
+    100%{transform:scale(1);}
+}
+
+@keyframes getar{
+    0%{transform:translateX(0);}
+    25%{transform:translateX(-5px);}
+    50%{transform:translateX(5px);}
+    75%{transform:translateX(-5px);}
+    100%{transform:translateX(0);}
+}
+
+@keyframes flashHijau{
+    0%{background:#121212;}
+    50%{background:#1f3d2b;}
+    100%{background:#121212;}
+}
+
+@keyframes flashMerah{
+    0%{background:#121212;}
+    50%{background:#3d1f1f;}
+    100%{background:#121212;}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Game Perkalian 1-10</h2>
+    <div>Skor: <span id="skor">0</span></div>
+    <div class="soal" id="soal"></div>
+    <div id="pilihan"></div>
+</div>
+
+<script>
+let skor = 0;
+let daftarSoal = [];
+let soalSekarang;
+
+for(let i=1;i<=10;i++){
+    for(let j=1;j<=10;j++){
+        daftarSoal.push({a:i,b:j});
+    }
+}
+
+daftarSoal.sort(()=>Math.random()-0.5);
+
+function buatSoal(){
+    if(daftarSoal.length==0){
+        document.getElementById("soal").innerText="🎉 Semua soal selesai!";
+        document.getElementById("pilihan").innerHTML="";
+        return;
+    }
+
+    soalSekarang = daftarSoal.pop();
+    document.getElementById("soal").innerText =
+        soalSekarang.a + " × " + soalSekarang.b + " = ?";
+
+    buatPilihan();
+}
+
+function buatPilihan(){
+    let benar = soalSekarang.a * soalSekarang.b;
+    let pilihan = [benar];
+
+    while(pilihan.length < 4){
+        let salah = benar + Math.floor(Math.random()*10) - 5;
+        if(salah>0 && salah!=benar && !pilihan.includes(salah)){
+            pilihan.push(salah);
+        }
+    }
+
+    pilihan.sort(()=>Math.random()-0.5);
+
+    let html="";
+    pilihan.forEach(j=>{
+        html += `<button onclick="cekJawaban(${j}, this)">${j}</button>`;
+    });
+
+    document.getElementById("pilihan").innerHTML = html;
+}
+
+function playSound(freq){
+    let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let oscillator = audioCtx.createOscillator();
+    let gainNode = audioCtx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = freq;
+
+    oscillator.start();
+    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+
+    oscillator.stop(audioCtx.currentTime + 0.2);
+}
+
+function cekJawaban(jawaban, tombol){
+    let benar = soalSekarang.a * soalSekarang.b;
+    let semuaTombol = document.querySelectorAll("button");
+
+    semuaTombol.forEach(btn=>btn.disabled=true);
+
+    if(jawaban == benar){
+        skor += 10;
+        tombol.classList.add("benar");
+        document.body.classList.add("flash-hijau");
+        playSound(800);
+    }else{
+        skor -= 5;
+        if(skor<0) skor=0;
+        tombol.classList.add("salah");
+        document.body.classList.add("flash-merah");
+        playSound(200);
+
+        semuaTombol.forEach(btn=>{
+            if(parseInt(btn.innerText)==benar){
+                btn.classList.add("benar");
+            }
+        });
+    }
+
+    document.getElementById("skor").innerText = skor;
+
+    setTimeout(()=>{
+        document.body.classList.remove("flash-hijau");
+        document.body.classList.remove("flash-merah");
+        buatSoal();
+    },800);
+}
+
+buatSoal();
+</script>
+
+</body>
+</html>
